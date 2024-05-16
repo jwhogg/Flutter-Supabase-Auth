@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_application_1/auth/authpage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_application_1/auth/authpage.dart';
+import 'package:flutter_application_1/pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-// load env
   await dotenv.load();
-// initialize supabase
-  String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-  String supabaseKey = dotenv.env['SUPABASE_KEY'] ?? '';
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_KEY']!,
+  );
   runApp(const MyApp());
 }
 
@@ -23,9 +23,12 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.lightGreen,
-        useMaterial3: true,
       ),
-      home: AuthPage(),
+      initialRoute: '/auth',
+      routes: {
+        '/auth': (context) => AuthPage(),
+        '/home': (context) => HomePage(),
+      },
     );
   }
 }

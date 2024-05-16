@@ -1,39 +1,99 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/pages/home_page.dart';
-import 'package:flutter_application_1/pages/start_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthPage extends StatefulWidget {
-  // const AuthPage({super.key});
-
   @override
-  State<AuthPage> createState() => _AuthPageState();
+  _AuthPageState createState() => _AuthPageState();
 }
 
 class _AuthPageState extends State<AuthPage> {
-  /*Retrieve the current user and assign the value to the _user variable. Notice that
-this page sets up a listener on the user's auth state using onAuthStateChange. */
-  User? _user;
-  @override
-  void initState() {
-    _getAuth();
-    super.initState();
-  }
-
-  Future<void> _getAuth() async {
-    setState(() {
-      _user = supabase.auth.currentUser;
-    });
-    supabase.auth.onAuthStateChange.listen((event) {
-      setState(() {
-        _user = event.session?.user;
-      });
-    });
-  }
-
   final SupabaseClient supabase = Supabase.instance.client;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  void _signUp() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final AuthResponse response = await supabase.auth.signUp(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+    setState(() {
+      _isLoading = false;
+    });
+    final Session? session = response.session;
+    final User? user = response.user;
+    if (session != null && user != null) {
+      // Navigate to home page
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign Up failed! Please try again.')),
+      );
+    }
+  }
+
+  void _signIn() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final AuthResponse response = await supabase.auth.signInWithPassword(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+    final Session? session = response.session;
+    final User? user = response.user;
+    setState(() {
+      _isLoading = false;
+    });
+    if (session != null && user != null) {
+      // Navigate to home page
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign In failed. Please ensure your details are correct.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return _user == null ? StartPage() : HomePage();
+    return Scaffold(
+      appBar: AppBar(title: Text('Auth Page')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: _emailController,
+              decoration: InputDecoration(labelText: 'Email'),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
+            const SizedBox(height: 16),
+            if (_isLoading) CircularProgressIndicator(),
+            if (!_isLoading)
+              Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: _signUp,
+                    child: Text('Sign Up'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _signIn,
+                    child: Text('Sign In'),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
